@@ -30,6 +30,7 @@ export default function HomePage() {
         <div className="bg-base-100 rounded-lg shadow p-6 text-left">
           <h2 className="text-xl font-semibold mb-2">Source repository</h2>
           <ul className="list-disc pl-5">
+            <li><a href='https://github.com/FabLeo451/control-panel/tree/main' target="_blank" className="link">Control panel</a></li>
             <li><a href='https://github.com/FabLeo451/Websocket-server' target="_blank" className="link">Websocket server</a></li>
           </ul>
         </div>
