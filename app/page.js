@@ -1,4 +1,5 @@
 import fs from 'fs'
+const os = require('os');
 import packageInfo from '../package.json'
 
 export default function HomePage() {
@@ -40,11 +41,17 @@ export default function HomePage() {
           <h2 className="text-xl font-semibold mb-2">Runtime</h2>
           <ul className="space-y-2 text-gray-800 text-sm">
             <li>
+              <strong>Environment: </strong><span>{process.env.ENVIRONMENT}</span>
+            </li>
+            <li>
+              <strong>Host: </strong><span>{os.hostname()}</span>
+            </li>
+            <li>
               <strong>Running in Docker:</strong>{' '}
               {runningInDocker ? (
-                <span className="text-green-600 font-semibold">Sì</span>
+                <span>Yes</span>
               ) : (
-                <span className="text-red-600 font-semibold">No</span>
+                <span>No</span>
               )}
             </li>
           </ul>
