@@ -102,13 +102,13 @@ export default function HealthPage() {
 			(d) => setRedis(p => ({ ...p, data: d })),
 			() => setRedis(p => ({ ...p, loading: false }))
 		)
-
+/*
 		fetch(`${API}/api/env`)
 			.then(res => res.json())
 			.then(data => setEnv({ loading: false, result: true, data }))
 			.catch(() => setEnv({ loading: false, result: false, data: {} })
 		)
-
+*/
         const connectWebSocket = async () => {
 
             try {
@@ -289,7 +289,7 @@ export default function HealthPage() {
 					</div>
 				</div>
 
-				<input type="radio" name="my_tabs_2" className="tab" aria-label="Environment" />
+				{/*<input type="radio" name="my_tabs_2" className="tab" aria-label="Environment" />
 				<div className="tab-content border-base-300 bg-base-100 p-10">
 					{env.loading ? (
 						<div className="flex items-center space-x-2 text-gray-600">
@@ -312,7 +312,7 @@ export default function HealthPage() {
 							<span>Can't retrieve variables or not authorized</span>
 						</div>
 					)}
-				</div>
+				</div>*/}
 
 
 
