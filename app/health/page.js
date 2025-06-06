@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import axios from 'axios';
 import ResultRow from '@/components/ResultRow'
 import {
-	ArrowPathIcon,
+	InformationCircleIcon,
 	XCircleIcon,
+	CheckCircleIcon,
 	CircleStackIcon,
 	ServerIcon,
 	CpuChipIcon
@@ -20,7 +21,7 @@ const fetchHealthData = async (url, setResult, setData, setLoading) => {
 		setData(data)
 	} catch (error) {
 		console.log('Fetch error: ', error)
-		setData({message: error.message})
+		setData({ message: error.message })
 	} finally {
 		setLoading(false)
 	}
@@ -51,6 +52,44 @@ function UsageBar({ title, used, total }) {
 	);
 }
 
+function LogViewer({ log }) {
+  return (
+    <div className="p-4">
+      <h1 className="text-xl font-bold mb-4">Log</h1>
+      <div className="space-y-2">
+        {log.map((msg, index) => {
+          let Icon;
+          let iconColor;
+
+          switch (msg.type) {
+            case 'error':
+              Icon = XCircleIcon;
+              iconColor = 'text-red-500';
+              break;
+            case 'success':
+              Icon = CheckCircleIcon;
+              iconColor = 'text-green-500';
+              break;
+            default:
+              Icon = InformationCircleIcon;
+              iconColor = 'text-blue-500';
+          }
+
+          return (
+            <div
+              key={index}
+              className={`flex items-center gap-2`}
+            >
+              <Icon className={`w-5 h-5 ${iconColor}`} />
+              <span>{msg.message}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function HealthPage() {
 	const [postgres, setPostgres] = useState({ loading: true, result: false, data: {} })
 	const [redis, setRedis] = useState({ loading: true, result: false, data: {} })
@@ -58,19 +97,29 @@ export default function HealthPage() {
 	const [system, setSystem] = useState({ loading: true, result: false, data: {} })
 	const [env, setEnv] = useState({ loading: true, result: false, data: {} })
 
-    const [ws, setWs] = useState(null);
-    const [connectionStatus, setConnectionStatus] = useState('Disconnected');
-    const [wsResponse, setWSResponse] = useState('');
+	const [ws, setWs] = useState(null);
+	const [connectionStatus, setConnectionStatus] = useState('Disconnected');
+	const [wsResponse, setWSResponse] = useState('');
 
-    const [alertMsg, setAlertMessage] = useState(null);
+	const [alertMsg, setAlertMessage] = useState(null);
 
-    const sendMessage = (payload) => {
-        if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify(payload));
-            console.log('Message sent to server');
-        } else
+	const [log, setLogMessages] = useState([]);
+
+	const addLog = (type, message) => {
+		const newMessage = {
+			type,
+			message
+		};
+		setLogMessages((prev) => [...prev, newMessage]);
+	};
+
+	const sendMessage = (payload) => {
+		if (ws && ws.readyState === WebSocket.OPEN) {
+			ws.send(JSON.stringify(payload));
+			console.log('Message sent to server');
+		} else
 			setAlertMessage("Can't send message. WebSocket is closed")
-    };
+	};
 
 	const sendProbeMessage = () => {
 		setAlertMessage(null);
@@ -102,40 +151,46 @@ export default function HealthPage() {
 			(d) => setRedis(p => ({ ...p, data: d })),
 			() => setRedis(p => ({ ...p, loading: false }))
 		)
-/*
-		fetch(`${API}/api/env`)
-			.then(res => res.json())
-			.then(data => setEnv({ loading: false, result: true, data }))
-			.catch(() => setEnv({ loading: false, result: false, data: {} })
-		)
-*/
-        const connectWebSocket = async () => {
+		/*
+				fetch(`${API}/api/env`)
+					.then(res => res.json())
+					.then(data => setEnv({ loading: false, result: true, data }))
+					.catch(() => setEnv({ loading: false, result: false, data: {} })
+				)
+		*/
+		const connectWebSocket = async () => {
 
-            try {
+			try {
 
-                // Get a temporary token
-                const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/token`, {
-                    withCredentials: true, // NECESSARIO per mandare i cookie cross-site
-                });
+				addLog('info', 'Getting temporary token for websocket authentication... ');
+
+				// Get a temporary token
+				const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/token`, {
+					withCredentials: true, // NECESSARIO per mandare i cookie cross-site
+				});
 
 				let socket;
 
-                // WebSocket
+				// WebSocket
 				if (ws && ws.readyState === WebSocket.OPEN) {
 					console.log('WebSocket already open');
-				} else 
-                	socket = new WebSocket(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}?token=${response.data.token}`);
+				} else
 
-                //console.log('socket = ', socket)
+					addLog('info', 'Connecting to websocket ' + process.env.NEXT_PUBLIC_WEBSOCKET_URL);
 
-                // Eventi WebSocket
-                socket.onopen = () => {
-                    setConnectionStatus('Connected');
-                    console.log('WebSocket connection opened');
-                };
+					socket = new WebSocket(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}?token=${response.data.token}`);
 
-                socket.onmessage = (event) => {
-                    console.log('Message from server:', event.data);
+				//console.log('socket = ', socket)
+
+				// Eventi WebSocket
+				socket.onopen = () => {
+					setConnectionStatus('Connected');
+					console.log('WebSocket connection opened');
+					addLog('success', 'Successfully connected to websocket');
+				};
+
+				socket.onmessage = (event) => {
+					console.log('Message from server:', event.data);
 
 					try {
 						let payload = JSON.parse(event.data);
@@ -143,49 +198,52 @@ export default function HealthPage() {
 					} catch (e) {
 						setAlertMessage("Can't process websocket response: " + event.data);
 					}
-                };
+				};
 
-                socket.onerror = (error) => {
-                    console.log('WebSocket error:', error);
+				socket.onerror = (error) => {
+					//console.log('WebSocket error:', error);
+					addLog('error', 'WebSocket error:', error);
 
-					setWebsocket({loading: false, result: false, data: { message: 'Unable to connect to websocket server' }})
-                };
+					setWebsocket({ loading: false, result: false, data: { message: 'Unable to connect to websocket server' } })
+				};
 
-                socket.onclose = () => {
-                    setConnectionStatus('Disconnected');
-                    console.log('WebSocket connection closed');
-                };
+				socket.onclose = () => {
+					setConnectionStatus('Disconnected');
+					addLog('error', 'WebSocket connection closed');
+				};
 
-                // Salva la connessione WebSocket nello stato
-                setWs(socket);
+				// Salva la connessione WebSocket nello stato
+				setWs(socket);
 
-                // Cleanup al momento della disconnessione del componente
-                return () => {
-                    socket.close();
-                    console.log('WebSocket connection closed on cleanup');
-                };
+				// Cleanup al momento della disconnessione del componente
+				return () => {
+					socket.close();
+					console.log('WebSocket connection closed on cleanup');
+				};
 
 
-            } catch (err) {
+			} catch (err) {
 
-                if (!err.response) {
-                    console.error('Network error: ' + err);
-                } else {
-                    // The server responded with a status other than 200 range
-                    console.log(err.response.data.message);
-                }
-            } finally {
+				if (!err.response) {
+					//console.error('Network error: ' + err);
+					addLog('error', 'Network error: ' + err);
+				} else {
+					// The server responded with a status other than 200 range
+					//console.log(err.response.data.message);
+					addLog('error', err.response.data.message);
+				}
+			} finally {
 
-					fetchHealthData(`${WS}/metrics`,
-						(r) => setWebsocket(p => ({ ...p, result: r })),
-						(d) => setWebsocket(p => ({ ...p, data: d })),
-						() => setWebsocket(p => ({ ...p, loading: false }))
-					)
+				fetchHealthData(`${WS}/metrics`,
+					(r) => setWebsocket(p => ({ ...p, result: r })),
+					(d) => setWebsocket(p => ({ ...p, data: d })),
+					() => setWebsocket(p => ({ ...p, loading: false }))
+				)
 
 			}
-        }
+		}
 
-        connectWebSocket();
+		connectWebSocket();
 
 
 	}, [])
@@ -194,14 +252,14 @@ export default function HealthPage() {
 		<div >
 
 			<div className="p-4">
-			{alertMsg && (
-				<div role="alert" className="alert alert-error">
-				<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
-					<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-				</svg>
-				<span>{alertMsg}</span>
-				</div>
-			)}
+				{alertMsg && (
+					<div role="alert" className="alert alert-error">
+						<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+						</svg>
+						<span>{alertMsg}</span>
+					</div>
+				)}
 			</div>
 
 			<div className="tabs tabs-border">
@@ -317,6 +375,8 @@ export default function HealthPage() {
 
 
 			</div>
+
+			<LogViewer log={log}/>
 
 
 
