@@ -41,7 +41,7 @@ export default function HomePage() {
           <h2 className="text-xl font-semibold mb-2">Runtime</h2>
           <ul className="space-y-2 text-gray-800 text-sm">
             <li>
-              <strong>Environment: </strong><span>{process.env.ENVIRONMENT}</span>
+              <strong>Environment: </strong><span>{process.env.NODE_ENV}</span>
             </li>
             <li>
               <strong>Host: </strong><span>{os.hostname()}</span>
