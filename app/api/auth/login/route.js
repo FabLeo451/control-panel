@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import pool from '@/lib/db';
-//import { setCookie } from '@/lib/cookies';
 import * as Utils from '@/lib/utils';
 import { serialize } from 'cookie';
 
@@ -10,6 +9,7 @@ import redis from '@/lib/redis';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const COOKIE_NAME = process.env.COOKIE_NAME;
+const SCHEMA = process.env.DB_SCHEMA;
 
 // curl -v -X POST -H "Origin: http://localhost:3000" -H "Content-Type: application/json" -d '{ "email":"q@w.e", "password": "fabio"}' http://192.168.1.126:3000/api/auth/login
 
@@ -68,11 +68,11 @@ export async function POST(request) {
             STRING_AGG(DISTINCT ur.roles, ', ') AS roles,
             STRING_AGG(DISTINCT rp.id_privilege, ', ') AS privileges
         FROM 
-            api.users u
+            ${SCHEMA}.users u
         JOIN 
-            api.user_roles ur ON u.id = ur.user_id
+            ${SCHEMA}.user_roles ur ON u.id = ur.user_id
         LEFT JOIN 
-            api.roles_privileges rp ON ur.roles = rp.id_role
+            ${SCHEMA}.roles_privileges rp ON ur.roles = rp.id_role
         WHERE 
             LOWER(u.email) = LOWER($2)
             AND u.status = 'enabled'

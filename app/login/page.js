@@ -27,11 +27,11 @@ export default function LoginPage() {
         setIsDisabled(true);
         setButtonText('Authenticating...');
 
-        console.log(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`)
+        console.log(`${process.env.NEXT_PUBLIC_API_AUTH_URL}/api/auth/login`)
 
         try {
             setError('');
-            const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`, { email, password }, {
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_API_AUTH_URL}/api/auth/login`, { email, password }, {
                 withCredentials: true
             });
 

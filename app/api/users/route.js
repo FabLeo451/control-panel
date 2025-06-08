@@ -5,6 +5,7 @@ import pool from '@/lib/db';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const COOKIE_NAME = process.env.COOKIE_NAME;
+const SCHEMA = process.env.DB_SCHEMA;
 
 // CORS preflight
 export async function OPTIONS(request) {
@@ -43,9 +44,9 @@ export async function GET(request) {
             u.last_access,
             u.created
         FROM 
-            api.users u
+            ${SCHEMA}.users u
         JOIN 
-            api.user_roles ur ON u.id = ur.user_id
+            ${SCHEMA}.user_roles ur ON u.id = ur.user_id
         GROUP BY 
             u.id`;
 
