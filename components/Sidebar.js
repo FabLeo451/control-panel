@@ -7,7 +7,8 @@ import {
   HomeIcon,
   UsersIcon,
   ListBulletIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  EnvelopeIcon
 } from "@heroicons/react/24/outline";
 
 export default function Sidebar() {
@@ -34,6 +35,10 @@ export default function Sidebar() {
         <Link href="/sessions" className={linkClass("/sessions")}>
           <ListBulletIcon className={iconClass} />
           Sessions
+        </Link>
+        <Link href="/mail" className={linkClass("/mail")}>
+          <EnvelopeIcon className={iconClass} />
+          Test email
         </Link>
         <Link href="/health" className={linkClass("/health")}>
           <CheckCircleIcon className={iconClass} />
