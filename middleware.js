@@ -7,14 +7,9 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 const TOKEN_EXPIRATION_TOKEN = process.env.TOKEN_EXPIRATION_TOKEN;
 
 var authPaths = {
-	'/': { privilege: 'access' },
-	'/sessions': { privilege: 'read_session' },
-	'/users': { privilege: 'read_users' },
-
-	'/api/env': { privilege: 'admin' },
-	'/api/sessions': { privilege: 'admin' },
-	'/api/auth/me': { privilege: 'access' },
-	'/api/auth/session': { privilege: 'admin' }
+	'/': { privilege: 'ek_access' },
+	'/sessions': { privilege: 'ek_read_session' },
+	'/users': { privilege: 'ek_read_users' },
 };
 
 export async function middleware(request) {
@@ -60,35 +55,28 @@ export async function middleware(request) {
 
 			//console.log('[middleware] ', payload);
 
+			const privilege = authPaths[pathname].privilege;
+
 			// Check privileges
 
-			//console.log('[middleware] Requested privilege', authPaths[pathname].privilege);
-			//console.log('[middleware] User privileges', payload.user.privileges);
+			//console.log('[middleware] Requested privilege:', privilege);
+			//console.log('[middleware] User privileges:', payload.user.privileges);
 
-			if (!authPaths[pathname].privilege || hasPrivilege(payload.user, authPaths[pathname].privilege)) {
+			let authorized = false;
 
-				
+			if (privilege) {
+				const hasPrivilege = payload.user.privileges.includes(privilege.toLowerCase());
+				const hasAdminRole = payload.user.privileges.includes('ek_admin');
 
-				// Renew token
-				/*
-				var sessionId = payload.sessionId;
-				const newToken = await new SignJWT(payload)
-					.setProtectedHeader({ alg: 'HS256' })
-					.setIssuedAt()
-					.setExpirationTime(TOKEN_EXPIRATION_TOKEN) // puoi usare anche "1h", "7d", etc.
-					.sign(JWT_SECRET);
+				authorized = hasPrivilege || hasAdminRole;
 
+			} else
+				authorized = true;
 
-				response.cookies.set(COOKIE_NAME, newToken, {
-					httpOnly: true,
-					// secure: true, // if HTTPS
-					sameSite: 'none',
-					path: '/'
-				});
-				*/
+			if (authorized) {
 
+				// Authenticated with right role
 
-				//return response;
 			} else {
 
 				return new NextResponse(JSON.stringify({ error: 'Forbidden: missing permissions' }), {
